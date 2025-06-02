@@ -1,0 +1,35 @@
+name: Xelarius CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: [self-hosted, nv-palladium]
+    name: GPU-Enabled Build & Test
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Verify NVIDIA GPU
+        run: |
+          nvidia-smi || echo "No NVIDIA GPU detected"
+          nvcc --version || echo "nvcc not found"
+
+      - name: Set up Rust toolchain
+        run: rustup show
+
+      - name: Build project
+        run: cargo build --workspace --verbose
+
+      - name: Run tests
+        run: cargo test --workspace --all-features --verbose
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Run Clippy linter
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
