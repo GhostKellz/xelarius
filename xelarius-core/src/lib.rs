@@ -1,5 +1,8 @@
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use sled::{Db, IVec};
+use std::sync::{Arc, Mutex};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Transaction {
@@ -7,6 +10,7 @@ pub struct Transaction {
     pub to: String,
     pub amount: u64,
     pub nonce: u64,
+    pub signature: Option<String>, // For signature validation stub
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -108,6 +112,86 @@ impl Blockchain {
     }
 }
 
+pub struct Mempool {
+    pub txs: Arc<Mutex<Vec<Transaction>>>,
+}
+
+impl Mempool {
+    pub fn new() -> Self {
+        Mempool {
+            txs: Arc::new(Mutex::new(Vec::new())),
+        }
+    }
+    pub fn add_tx(&self, tx: Transaction) {
+        self.txs.lock().unwrap().push(tx);
+    }
+    pub fn drain(&self) -> Vec<Transaction> {
+        let mut txs = self.txs.lock().unwrap();
+        let drained = txs.clone();
+        txs.clear();
+        drained
+    }
+}
+
+pub struct PersistentChain {
+    pub db: Db,
+}
+
+impl PersistentChain {
+    pub fn open(path: &str) -> sled::Result<Self> {
+        let db = sled::open(path)?;
+        Ok(PersistentChain { db })
+    }
+    pub fn store_block(&self, block: &Block) -> sled::Result<()> {
+        let key = block.index.to_be_bytes();
+        let value = bincode::serialize(block).unwrap();
+        self.db.insert(key, value)?;
+        Ok(())
+    }
+    pub fn get_block(&self, index: u64) -> Option<Block> {
+        let key = index.to_be_bytes();
+        self.db.get(key).ok().flatten().and_then(|ivec| bincode::deserialize(&ivec).ok())
+    }
+}
+
+pub struct StateStore {
+    pub balances: HashMap<String, u64>,
+    pub nonces: HashMap<String, u64>,
+}
+
+impl StateStore {
+    pub fn new() -> Self {
+        StateStore {
+            balances: HashMap::new(),
+            nonces: HashMap::new(),
+        }
+    }
+    pub fn apply_tx(&mut self, tx: &Transaction) -> bool {
+        // Dummy signature check
+        if tx.signature.is_none() { return false; }
+        // Nonce check
+        let nonce = self.nonces.get(&tx.from).cloned().unwrap_or(0);
+        if tx.nonce != nonce { return false; }
+        // Balance check
+        let bal = self.balances.get(&tx.from).cloned().unwrap_or(0);
+        if bal < tx.amount { return false; }
+        // Apply
+        *self.balances.entry(tx.from.clone()).or_insert(0) -= tx.amount;
+        *self.balances.entry(tx.to.clone()).or_insert(0) += tx.amount;
+        self.nonces.insert(tx.from.clone(), tx.nonce + 1);
+        true
+    }
+}
+
+// WASM contract engine stub
+pub struct WasmEngine;
+impl WasmEngine {
+    pub fn execute(_code: &[u8], _input: &[u8]) -> Vec<u8> {
+        // Stub: return empty vec
+        vec![]
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -119,6 +203,7 @@ mod tests {
             to: "b".into(),
             amount: 10,
             nonce: 1,
+            signature: Some("sig".into()),
         };
         let ok = chain.add_block(vec![tx.clone()], 123);
         assert!(ok);
@@ -134,12 +219,14 @@ mod tests {
             to: "b".into(),
             amount: 10,
             nonce: 1,
+            signature: Some("sig1".into()),
         };
         let tx2 = Transaction {
             from: "b".into(),
             to: "c".into(),
             amount: 5,
             nonce: 2,
+            signature: Some("sig2".into()),
         };
         chain.add_block(vec![tx1], 1);
         chain.add_block(vec![tx2], 2);
@@ -154,6 +241,7 @@ mod tests {
             to: "b".into(),
             amount: 10,
             nonce: 1,
+            signature: Some("sig".into()),
         };
         let mut block = Block::new(1, 123, vec![tx], "bad_hash".into());
         block.hash = "tampered".into();
