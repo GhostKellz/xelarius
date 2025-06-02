@@ -7,29 +7,46 @@ on:
     branches: [main]
 
 jobs:
-  build-and-test:
-    runs-on: [self-hosted, nv-palladium]
+  gpu-build-test:
     name: GPU-Enabled Build & Test
+    runs-on: [self-hosted, nv-palladium]
+    defaults:
+      run:
+        shell: bash -l {0}  # ensures rustup path is sourced
+
     steps:
-      - name: Checkout repo
+      - name: ⬇️ Checkout repo
         uses: actions/checkout@v4
 
-      - name: Verify NVIDIA GPU
+      - name: 🔍 Verify NVIDIA GPU availability
         run: |
-          nvidia-smi || echo "No NVIDIA GPU detected"
-          nvcc --version || echo "nvcc not found"
+          echo "[runner: $(hostname)] Verifying GPU"
+          nvidia-smi || echo "❌ NVIDIA GPU not detected"
+          nvcc --version || echo "❌ nvcc not found"
 
-      - name: Set up Rust toolchain
+      - name: ⚙️ Confirm Rust toolchain is installed
         run: rustup show
 
-      - name: Build project
-        run: cargo build --workspace --verbose
+      - name: 🧱 Build workspace
+        run: cargo build --workspace --release --verbose
 
-      - name: Run tests
+      - name: 🧪 Run tests
         run: cargo test --workspace --all-features --verbose
 
-      - name: Check formatting
+      - name: ✅ Check formatting
         run: cargo fmt --all -- --check
 
-      - name: Run Clippy linter
+      - name: 🔍 Run Clippy
         run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+      # Optional: Enable caching for dependencies
+      - name: ⚡ Cache Cargo registry and target dir
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
