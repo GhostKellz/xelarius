@@ -1,4 +1,4 @@
-name: CI
+name: Xelarius Node CI
 
 on:
   push:
@@ -9,7 +9,8 @@ on:
 jobs:
   build:
     runs-on: self-hosted
-    name: Build on nv-palladium
+    name: Build xelarius-node on nv-palladium
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -22,17 +23,13 @@ jobs:
           components: clippy, rustfmt
 
       - name: Clippy Check
-        run: cargo clippy --all-targets --all-features -- -D warnings
-        working-directory: ./
+        run: cargo clippy -p xelarius-node --all-targets --all-features -- -D warnings
 
       - name: Format Check
         run: cargo fmt --check
-        working-directory: ./
 
-      - name: Build
-        run: cargo build --verbose
-        working-directory: ./
+      - name: Build xelarius-node
+        run: cargo build -p xelarius-node --verbose --release
 
-      - name: Test
-        run: cargo test --verbose
-        working-directory: ./
+      - name: Run xelarius-node tests
+        run: cargo test -p xelarius-node --verbose
