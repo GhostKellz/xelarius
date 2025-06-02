@@ -1,12 +1,18 @@
-use xelarius_core::Blockchain;
+use xelarius_core::{Blockchain, Transaction};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 fn main() {
     let mut chain = Blockchain::new();
 
-    // Fake block for test
+    // Add a block with a dummy transaction for test
     let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
-    chain.add_block("Initial test block".into(), now);
+    let tx = Transaction {
+        from: "genesis".into(),
+        to: "test".into(),
+        amount: 0,
+        nonce: 0,
+    };
+    chain.add_block(vec![tx], now);
 
     for block in chain.chain.iter() {
         println!("Block #{}: {:?}", block.index, block);
