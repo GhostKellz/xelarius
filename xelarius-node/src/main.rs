@@ -1,4 +1,4 @@
-use libp2p::{PeerId, identity, swarm::Swarm, gossipsub::{Gossipsub, GossipsubEvent, MessageAuthenticity, IdentTopic, GossipsubConfig}, tcp::TokioTcpConfig, noise, yamux, Transport, core::upgrade, Multiaddr};
+use libp2p::{PeerId, identity, swarm::Swarm, gossipsub::{Gossipsub, GossipsubEvent, MessageAuthenticity, IdentTopic, GossipsubConfig}, tcp::TokioTcpConfig, noise, yamux, Transport, core::upgrade};
 use serde_json::json;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -32,7 +32,7 @@ async fn main() {
     let mut gossipsub = Gossipsub::new(MessageAuthenticity::Signed(id_keys.clone()), gossipsub_config).unwrap();
     let topic = IdentTopic::new("xelarius-blocks");
     gossipsub.subscribe(&topic).unwrap();
-    let mut swarm = Swarm::new(transport, gossipsub, peer_id);
+    let mut swarm = Swarm::new(transport, gossipsub, peer_id, libp2p::swarm::Config::default());
 
     // Channel for sending new blocks/txs to the network
     let (net_tx, mut net_rx) = mpsc::unbounded_channel();
