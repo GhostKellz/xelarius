@@ -227,13 +227,13 @@ impl WasmEngine {
     }
 
     pub fn execute(&mut self, code: &[u8], func: &str, input: &[u8]) -> anyhow::Result<Vec<u8>> {
-        use wasmtime::{Caller, Extern, Func, Instance, Module};
+        use wasmtime::{Instance, Module};
         let module = Module::from_binary(&self.engine, code)?;
         let instance = Instance::new(&mut self.store, &module, &[])?;
         let func = instance
             .get_func(&mut self.store, func)
             .ok_or_else(|| anyhow::anyhow!("Function not found"))?;
-        let typed = func.typed::<(i32, i32), i32, _>(&self.store)?;
+        let typed = func.typed::<(i32, i32), i32>(&self.store)?;
         // For demo: pass dummy args, real ABI would marshal input/output
         let result = typed.call(&mut self.store, (0, 0))?;
         Ok(result.to_le_bytes().to_vec())
