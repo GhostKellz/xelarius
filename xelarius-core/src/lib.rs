@@ -226,7 +226,7 @@ impl WasmEngine {
         WasmEngine { engine, store }
     }
 
-    pub fn execute(&mut self, code: &[u8], func: &str, input: &[u8]) -> anyhow::Result<Vec<u8>> {
+    pub fn execute(&mut self, code: &[u8], func: &str, _input: &[u8]) -> anyhow::Result<Vec<u8>> {
         use wasmtime::{Instance, Module};
         let module = Module::from_binary(&self.engine, code)?;
         let instance = Instance::new(&mut self.store, &module, &[])?;
@@ -237,6 +237,12 @@ impl WasmEngine {
         // For demo: pass dummy args, real ABI would marshal input/output
         let result = typed.call(&mut self.store, (0, 0))?;
         Ok(result.to_le_bytes().to_vec())
+    }
+}
+
+impl Default for WasmEngine {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
