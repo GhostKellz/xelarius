@@ -6,10 +6,11 @@ use libp2p::{
     gossipsub::{Behaviour as Gossipsub, Config as GossipsubConfig, Event as GossipsubEvent, IdentTopic, MessageAuthenticity},
     identity,
     noise::{NoiseConfig, X25519Spec, Keypair as NoiseKeypair},
-    swarm::SwarmBuilder,
+    swarm::{Swarm, SwarmBuilder},
     tcp::{Transport, Config as TcpConfig},
     yamux::YamuxConfig,
     PeerId,
+    Transport as Libp2pTransport,
 };
 use tokio::sync::mpsc;
 use tracing::{info, error};

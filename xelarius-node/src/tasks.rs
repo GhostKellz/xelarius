@@ -28,25 +28,21 @@ pub async fn start_tasks(
     registry.register(Box::new(NETWORK_LATENCY.clone())).unwrap();
 
     // Consensus loop: produce a block every 5 seconds if mempool has txs
-    let chain_consensus = chain.clone();
-    let mempool_consensus = mempool.clone();
-    let db_consensus = db.clone();
-    let state_consensus = state.clone();
     tokio::spawn(async move {
         loop {
-            let txs = mempool_consensus.drain();
+            let txs = mempool.drain();
             if !txs.is_empty() {
                 let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
                 let valid_txs = {
-                    let mut state = state_consensus.lock().unwrap();
+                    let mut state = state.lock().unwrap();
                     txs.into_iter().filter(|tx| state.apply_tx(tx)).collect::<Vec<_>>()
                 };
                 let success = {
-                    let mut chain = chain_consensus.lock().unwrap();
+                    let mut chain = chain.lock().unwrap();
                     chain.add_block(valid_txs.clone(), now)
                 };
                 if success {
-                    db_consensus.store_block(&chain_consensus.lock().unwrap().chain.last().unwrap()).unwrap();
+                    db.store_block(&chain.lock().unwrap().chain.last().unwrap()).unwrap();
                     BLOCK_PRODUCTION_RATE.inc();
                     info!("Block produced at {}", now);
                 } else {
@@ -58,7 +54,6 @@ pub async fn start_tasks(
     });
 
     // Dummy tx generator: add a tx every 10 seconds
-    let mempool_tx = mempool.clone();
     tokio::spawn(async move {
         let mut nonce = 0;
         loop {
@@ -69,7 +64,7 @@ pub async fn start_tasks(
                 nonce,
                 signature: Some("dummy_sig".into()),
             };
-            mempool_tx.add_tx(tx);
+            mempool.add_tx(tx.clone());
             nonce += 1;
             info!("Transaction added: {:?}", tx);
             sleep(Duration::from_secs(10)).await;
