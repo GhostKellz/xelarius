@@ -1,10 +1,10 @@
-use std::time::{SystemTime, UNIX_EPOCH};
-use xelarius_core::{Blockchain, Transaction, Mempool, PersistentChain};
-use tokio::time::{sleep, Duration};
-use std::sync::Arc;
-use libp2p::{identity, PeerId};
-use tokio::net::TcpListener;
+use libp2p::{PeerId, identity};
 use serde_json::json;
+use std::sync::Arc;
+use std::time::{SystemTime, UNIX_EPOCH};
+use tokio::net::TcpListener;
+use tokio::time::{Duration, sleep};
+use xelarius_core::{Blockchain, Mempool, PersistentChain, Transaction};
 
 #[tokio::main]
 async fn main() {
@@ -41,7 +41,10 @@ async fn main() {
         loop {
             let txs = mempool_clone.drain();
             if !txs.is_empty() {
-                let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+                let now = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs();
                 // Validate and apply txs
                 let valid_txs: Vec<_> = txs.into_iter().filter(|tx| state.apply_tx(tx)).collect();
                 chain.add_block(valid_txs.clone(), now);

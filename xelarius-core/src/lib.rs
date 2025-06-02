@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use sled::Db;
-use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Transaction {
@@ -145,7 +145,9 @@ pub struct PersistentChain {
 
 impl Clone for PersistentChain {
     fn clone(&self) -> Self {
-        PersistentChain { db: self.db.clone() }
+        PersistentChain {
+            db: self.db.clone(),
+        }
     }
 }
 
@@ -162,7 +164,11 @@ impl PersistentChain {
     }
     pub fn get_block(&self, index: u64) -> Option<Block> {
         let key = index.to_be_bytes();
-        self.db.get(key).ok().flatten().and_then(|ivec| bincode::deserialize(&ivec).ok())
+        self.db
+            .get(key)
+            .ok()
+            .flatten()
+            .and_then(|ivec| bincode::deserialize(&ivec).ok())
     }
 }
 
@@ -180,13 +186,19 @@ impl StateStore {
     }
     pub fn apply_tx(&mut self, tx: &Transaction) -> bool {
         // Dummy signature check
-        if tx.signature.is_none() { return false; }
+        if tx.signature.is_none() {
+            return false;
+        }
         // Nonce check
         let nonce = self.nonces.get(&tx.from).cloned().unwrap_or(0);
-        if tx.nonce != nonce { return false; }
+        if tx.nonce != nonce {
+            return false;
+        }
         // Balance check
         let bal = self.balances.get(&tx.from).cloned().unwrap_or(0);
-        if bal < tx.amount { return false; }
+        if bal < tx.amount {
+            return false;
+        }
         // Apply
         *self.balances.entry(tx.from.clone()).or_insert(0) -= tx.amount;
         *self.balances.entry(tx.to.clone()).or_insert(0) += tx.amount;
@@ -215,10 +227,11 @@ impl WasmEngine {
     }
 
     pub fn execute(&mut self, code: &[u8], func: &str, input: &[u8]) -> anyhow::Result<Vec<u8>> {
-        use wasmtime::{Module, Instance, Func, Caller, Extern};
+        use wasmtime::{Caller, Extern, Func, Instance, Module};
         let module = Module::from_binary(&self.engine, code)?;
         let instance = Instance::new(&mut self.store, &module, &[])?;
-        let func = instance.get_func(&mut self.store, func)
+        let func = instance
+            .get_func(&mut self.store, func)
             .ok_or_else(|| anyhow::anyhow!("Function not found"))?;
         let typed = func.typed::<(i32, i32), i32, _>(&self.store)?;
         // For demo: pass dummy args, real ABI would marshal input/output
