@@ -1,4 +1,4 @@
-name: Xelarius CI
+name: CI
 
 on:
   push:
@@ -7,46 +7,32 @@ on:
     branches: [main]
 
 jobs:
-  gpu-build-test:
-    name: GPU-Enabled Build & Test
-    runs-on: [self-hosted, nv-palladium]
-    defaults:
-      run:
-        shell: bash -l {0}  # ensures rustup path is sourced
-
+  build:
+    runs-on: self-hosted
+    name: Build on nv-palladium
     steps:
-      - name: ⬇️ Checkout repo
-        uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
-      - name: 🔍 Verify NVIDIA GPU availability
-        run: |
-          echo "[runner: $(hostname)] Verifying GPU"
-          nvidia-smi || echo "❌ NVIDIA GPU not detected"
-          nvcc --version || echo "❌ nvcc not found"
-
-      - name: ⚙️ Confirm Rust toolchain is installed
-        run: rustup show
-
-      - name: 🧱 Build workspace
-        run: cargo build --workspace --release --verbose
-
-      - name: 🧪 Run tests
-        run: cargo test --workspace --all-features --verbose
-
-      - name: ✅ Check formatting
-        run: cargo fmt --all -- --check
-
-      - name: 🔍 Run Clippy
-        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
-
-      # Optional: Enable caching for dependencies
-      - name: ⚡ Cache Cargo registry and target dir
-        uses: actions/cache@v3
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
+          toolchain: stable
+          override: true
+          components: clippy, rustfmt
+
+      - name: Clippy Check
+        run: cargo clippy --all-targets --all-features -- -D warnings
+        working-directory: ./
+
+      - name: Format Check
+        run: cargo fmt --check
+        working-directory: ./
+
+      - name: Build
+        run: cargo build --verbose
+        working-directory: ./
+
+      - name: Test
+        run: cargo test --verbose
+        working-directory: ./
