@@ -1,4 +1,4 @@
-name: Xelarius Node CI
+name: Xelarius CI
 
 on:
   push:
@@ -9,27 +9,27 @@ on:
 jobs:
   build:
     runs-on: self-hosted
-    name: Build xelarius-node on nv-palladium
+    name: Build on nv-palladium
 
     steps:
-      - name: Checkout repo
+      - name: ✅ Checkout repo
         uses: actions/checkout@v3
 
-      - name: Set up Rust
+      - name: 🛠 Set up Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
           components: clippy, rustfmt
 
-      - name: Clippy Check
-        run: cargo clippy -p xelarius-node --all-targets --all-features -- -D warnings
+      - name: 🔍 Clippy Check
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
-      - name: Format Check
+      - name: ✅ Format Check
         run: cargo fmt --check
 
-      - name: Build xelarius-node
-        run: cargo build -p xelarius-node --verbose --release
+      - name: 🧱 Build
+        run: cargo build --workspace --verbose
 
-      - name: Run xelarius-node tests
-        run: cargo test -p xelarius-node --verbose
+      - name: 🧪 Test
+        run: cargo test --workspace --verbose
