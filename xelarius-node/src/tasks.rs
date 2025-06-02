@@ -58,8 +58,12 @@ pub async fn start_tasks(
     let chain_print = chain.clone();
     tokio::spawn(async move {
         loop {
-            let chain = chain_print.lock().unwrap();
-            println!("Current chain: {:?}", chain.chain);
+            // Lock, extract data, drop guard before await
+            let chain_str = {
+                let chain = chain_print.lock().unwrap();
+                format!("{:?}", chain.chain)
+            };
+            println!("Current chain: {}", chain_str);
             sleep(Duration::from_secs(15)).await;
         }
     });

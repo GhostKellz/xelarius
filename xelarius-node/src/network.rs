@@ -6,10 +6,11 @@ use libp2p::{
     gossipsub::{Behaviour as Gossipsub, Config as GossipsubConfig, Event as GossipsubEvent, IdentTopic, MessageAuthenticity},
     identity,
     noise::{NoiseConfig, X25519Spec, Keypair as NoiseKeypair},
-    swarm::SwarmBuilder,
-    tcp::tokio::Transport,
+    swarm::Swarm,
+    tcp::{Transport, Config as TcpConfig},
     yamux::YamuxConfig,
     PeerId,
+    Transport as Libp2pTransport,
 };
 use tokio::sync::mpsc;
 
@@ -17,7 +18,7 @@ pub async fn setup_network() -> (mpsc::UnboundedSender<Vec<u8>>, mpsc::Unbounded
     let id_keys = identity::Keypair::generate_ed25519();
     let peer_id = PeerId::from(id_keys.public());
     let noise_keys = NoiseKeypair::<X25519Spec>::new().into_authentic(&id_keys).unwrap();
-    let transport = Transport::new()
+    let transport = Transport::new(TcpConfig::default())
         .upgrade(upgrade::Version::V1)
         .authenticate(NoiseConfig::xx(noise_keys).unwrap())
         .multiplex(YamuxConfig::default())
@@ -26,11 +27,11 @@ pub async fn setup_network() -> (mpsc::UnboundedSender<Vec<u8>>, mpsc::Unbounded
     let mut behaviour = Gossipsub::new(MessageAuthenticity::Signed(id_keys.clone()), gossipsub_config).unwrap();
     let topic = IdentTopic::new("xelarius-blocks");
     behaviour.subscribe(&topic).unwrap();
-    let mut swarm = SwarmBuilder::without_executor(transport, behaviour, peer_id).build();
+    let mut swarm = Swarm::new(transport, behaviour, peer_id);
 
     let (net_tx, mut net_rx) = mpsc::unbounded_channel();
 
-    // Spawn a task to handle libp2p events
+    use futures::StreamExt;
     tokio::spawn(async move {
         loop {
             tokio::select! {

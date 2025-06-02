@@ -13,8 +13,12 @@ pub async fn start_rpc(chain: Arc<std::sync::Mutex<Blockchain>>) {
         let (mut socket, _) = listener.accept().await.expect("accept");
         let chain = chain.clone();
         tokio::spawn(async move {
-            let chain = chain.lock().unwrap();
-            let resp = json!({"jsonrpc":"2.0","result":chain.chain.len(),"id":1});
+            // Lock, extract data, drop guard before await
+            let len = {
+                let chain = chain.lock().unwrap();
+                chain.chain.len()
+            };
+            let resp = json!({"jsonrpc":"2.0","result":len,"id":1});
             let _ = socket.write_all(resp.to_string().as_bytes()).await;
         });
     }
