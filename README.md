@@ -1,4 +1,4 @@
-# Xelarius (\$XZN)
+# Xelarius ($XZN)
 
 **Xelarius** is a next-generation Rust-native blockchain platform built for scalable execution, cryptographic certainty, and self-sovereign infrastructure. Designed as a modular base-layer chain, Xelarius enables high-speed decentralized apps, composable smart contracts, and autonomous financial systems.
 
@@ -80,6 +80,25 @@ cargo run -p xelarius-node
 Block #0: { index: 0, data: "Genesis", ... }
 Block #1: { index: 1, data: "First XZN tx", ... }
 ```
+
+---
+
+## 📜 Tokenomics
+
+* **Token Name**: Xelarius
+* **Ticker**: $XZN
+* **Supply**: 42,000,000 (fixed, with burning mechanism)
+* **Usage**: Gas fees, staking, contract deployment, governance
+
+---
+
+## 🧱 Earning Mechanisms
+
+Xelarius enables multiple ways to earn:
+
+* **Staking**: Lock tokens to secure the network and earn rewards.
+* **Compute Contributions**: Use CPU/GPU power for decentralized compute tasks.
+* **Home Lab Participation**: Run nodes and relays to earn rewards.
 
 ---
 

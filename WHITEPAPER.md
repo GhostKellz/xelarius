@@ -45,27 +45,42 @@ We believe in:
 * 🧰 Integrate CLI utilities for dev workflows
 * 🌐 Future-proof your software by building on Rust + WASM
 
-## 6. Tokenomics (Conceptual)
+## 6. Tokenomics (Finalized)
 
 * **Token Name**: Xelarius
-* **Ticker**: \$XZN
+* **Ticker**: $XZN
 * **Initial Platform**: Native chain
-* **Supply**: TBD — fair launch principles in mind
+* **Supply**: 42,000,000 (fixed, with burning mechanism)
 * **Usage**: Gas fees, staking, contract deployment, governance
 
-## 7. Development Timeline
+## 7. Earning Mechanisms
 
-* ✅ Rust chain bootstrap (block logic, CLI node)
-* 🔄 Contract engine + tooling (WASM runtime, ABI layer)
-* 🔐 Modular validator selection + hash types
-* 🌐 Network coordination, RPC layers, explorer
-* 🚀 Community devnet launch + bridge design
+Xelarius enables multiple ways to earn:
 
-## 8. Community Goals
+* **Staking**: Lock tokens to secure the network and earn rewards.
+* **Compute Contributions**: Use CPU/GPU power for decentralized compute tasks.
+* **Home Lab Participation**: Run nodes and relays to earn rewards.
 
-* Empower devs with WASM-native tooling
-* Provide sovereignty without needing L1 gatekeeping
-* Encourage contribution from tinkerers to protocol engineers
+## 8. Wallet Setup
+
+To set up a test wallet:
+
+1. Generate a wallet address:
+   ```bash
+   xelarius-wallet create --name ckelley.eth
+   ```
+
+2. Fund the wallet with test tokens:
+   ```bash
+   xelarius-wallet fund --address <wallet_address> --amount 1000
+   ```
+
+3. Use the wallet to send transactions:
+   ```bash
+   xelarius-wallet send --to <recipient_address> --amount 100 --gas 1
+   ```
+
+---
 
 ## 9. License
 

@@ -20,7 +20,7 @@ use tokio::io::AsyncWriteExt;
 use tokio::net::TcpListener;
 use tokio::sync::mpsc;
 use tokio::time::{sleep, Duration};
-use xelarius_core::{Blockchain, Mempool, PersistentChain, Transaction, StateStore};
+use xelarius_core::{Blockchain, Mempool, PersistentChain, Transaction, StateStore, Token};
 
 mod network;
 mod chain;
@@ -40,7 +40,7 @@ async fn main() {
     println!("Local peer id: {:?}", local_peer_id);
 
     // Start JSON-RPC server
-    rpc::start_rpc(chain.clone()).await;
+    rpc::start_rpc(chain.clone(), Arc::new(std::sync::Mutex::new(Token::new("Xelarius", "XZN", 42000000)))).await;
 
     // Start consensus, tx generation, and periodic printing tasks
     tasks::start_tasks(chain, mempool, db, state, net_tx, net_rx).await;

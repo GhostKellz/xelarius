@@ -246,6 +246,56 @@ impl Default for WasmEngine {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Token {
+    pub name: String,
+    pub symbol: String,
+    pub total_supply: u64,
+    pub balances: HashMap<String, u64>,
+}
+
+impl Token {
+    pub fn new(name: &str, symbol: &str, total_supply: u64) -> Self {
+        let mut balances = HashMap::new();
+        balances.insert("genesis".to_string(), total_supply);
+        Token {
+            name: name.to_string(),
+            symbol: symbol.to_string(),
+            total_supply,
+            balances,
+        }
+    }
+
+    pub fn transfer(&mut self, from: &str, to: &str, amount: u64) -> Result<(), String> {
+        let from_balance = self.balances.get(from).cloned().unwrap_or(0);
+        if from_balance < amount {
+            return Err("Insufficient balance".to_string());
+        }
+        *self.balances.entry(from.to_string()).or_insert(0) -= amount;
+        *self.balances.entry(to.to_string()).or_insert(0) += amount;
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Wallet {
+    pub address: String,
+    pub private_key: String,
+}
+
+impl Wallet {
+    pub fn new(address: &str, private_key: &str) -> Self {
+        Wallet {
+            address: address.to_string(),
+            private_key: private_key.to_string(),
+        }
+    }
+
+    pub fn sign_transaction(&self, tx: &mut Transaction) {
+        tx.signature = Some(format!("signed_by_{}", self.address));
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
