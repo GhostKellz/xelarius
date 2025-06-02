@@ -143,6 +143,12 @@ pub struct PersistentChain {
     pub db: Db,
 }
 
+impl Clone for PersistentChain {
+    fn clone(&self) -> Self {
+        PersistentChain { db: self.db.clone() }
+    }
+}
+
 impl PersistentChain {
     pub fn open(path: &str) -> sled::Result<Self> {
         let db = sled::open(path)?;
@@ -195,12 +201,29 @@ impl Default for StateStore {
     }
 }
 
-// WASM contract engine stub
-pub struct WasmEngine;
+// WASM contract engine using Wasmtime
+pub struct WasmEngine {
+    pub engine: wasmtime::Engine,
+    pub store: wasmtime::Store<()>,
+}
+
 impl WasmEngine {
-    pub fn execute(_code: &[u8], _input: &[u8]) -> Vec<u8> {
-        // Stub: return empty vec
-        vec![]
+    pub fn new() -> Self {
+        let engine = wasmtime::Engine::default();
+        let store = wasmtime::Store::new(&engine, ());
+        WasmEngine { engine, store }
+    }
+
+    pub fn execute(&mut self, code: &[u8], func: &str, input: &[u8]) -> anyhow::Result<Vec<u8>> {
+        use wasmtime::{Module, Instance, Func, Caller, Extern};
+        let module = Module::from_binary(&self.engine, code)?;
+        let instance = Instance::new(&mut self.store, &module, &[])?;
+        let func = instance.get_func(&mut self.store, func)
+            .ok_or_else(|| anyhow::anyhow!("Function not found"))?;
+        let typed = func.typed::<(i32, i32), i32, _>(&self.store)?;
+        // For demo: pass dummy args, real ABI would marshal input/output
+        let result = typed.call(&mut self.store, (0, 0))?;
+        Ok(result.to_le_bytes().to_vec())
     }
 }
 

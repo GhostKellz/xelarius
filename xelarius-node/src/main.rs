@@ -3,7 +3,6 @@ use xelarius_core::{Blockchain, Transaction, Mempool, PersistentChain};
 use tokio::time::{sleep, Duration};
 use std::sync::Arc;
 use libp2p::{identity, PeerId};
-use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use serde_json::json;
 
