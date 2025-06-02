@@ -1,11 +1,19 @@
-use libp2p::{PeerId, identity, swarm::Swarm, gossipsub::{Gossipsub, GossipsubEvent, MessageAuthenticity, IdentTopic, GossipsubConfig}, tcp::TokioTcpConfig, noise, yamux, Transport, core::upgrade};
+use libp2p::{PeerId, Transport, core::upgrade, identity, swarm::Swarm};
+use libp2p_gossipsub::{
+    Gossipsub, GossipsubConfig, GossipsubEvent, IdentTopic, MessageAuthenticity,
+};
+use libp2p_noise::{
+    AuthenticKeypair, Keypair as NoiseKeypair, NoiseAuthenticated, NoiseConfig, X25519Spec,
+};
+use libp2p_tcp::TokioTcpTransport;
+use libp2p_yamux::YamuxConfig;
 use serde_json::json;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
-use tokio::net::TcpListener;
-use tokio::time::{Duration, sleep};
 use tokio::io::AsyncWriteExt;
+use tokio::net::TcpListener;
 use tokio::sync::mpsc;
+use tokio::time::{Duration, sleep};
 use xelarius_core::{Blockchain, Mempool, PersistentChain, Transaction};
 
 #[tokio::main]
@@ -23,16 +31,23 @@ async fn main() {
     // --- libp2p networking setup ---
     let id_keys = identity::Keypair::generate_ed25519();
     let peer_id = PeerId::from(id_keys.public());
-    let transport = TokioTcpConfig::new()
+    let noise_keys = NoiseKeypair::<X25519Spec>::new()
+        .into_authentic(&id_keys)
+        .unwrap();
+    let transport = TokioTcpTransport::new()
         .upgrade(upgrade::Version::V1)
-        .authenticate(noise::NoiseAuthenticated::xx(&id_keys).unwrap())
-        .multiplex(yamux::YamuxConfig::default())
+        .authenticate(NoiseConfig::xx(noise_keys).unwrap())
+        .multiplex(YamuxConfig::default())
         .boxed();
     let gossipsub_config = GossipsubConfig::default();
-    let mut gossipsub = Gossipsub::new(MessageAuthenticity::Signed(id_keys.clone()), gossipsub_config).unwrap();
+    let mut gossipsub = Gossipsub::new(
+        MessageAuthenticity::Signed(id_keys.clone()),
+        gossipsub_config,
+    )
+    .unwrap();
     let topic = IdentTopic::new("xelarius-blocks");
     gossipsub.subscribe(&topic).unwrap();
-    let mut swarm = Swarm::new(transport, gossipsub, peer_id, libp2p::swarm::Config::default());
+    let mut swarm = Swarm::with_tokio_executor(transport, gossipsub, peer_id);
 
     // Channel for sending new blocks/txs to the network
     let (net_tx, mut net_rx) = mpsc::unbounded_channel();
@@ -81,7 +96,10 @@ async fn main() {
         loop {
             let txs = mempool_clone.drain();
             if !txs.is_empty() {
-                let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+                let now = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs();
                 // Validate and apply txs
                 let mut state = state_consensus.lock().unwrap();
                 let valid_txs: Vec<_> = txs.into_iter().filter(|tx| state.apply_tx(tx)).collect();
@@ -127,5 +145,7 @@ async fn main() {
     });
 
     // Keep main alive
-    loop { sleep(Duration::from_secs(60)).await; }
+    loop {
+        sleep(Duration::from_secs(60)).await;
+    }
 }
