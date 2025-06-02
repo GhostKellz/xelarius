@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use sled::{Db, IVec};
+use sled::Db;
 use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
 
@@ -133,6 +133,12 @@ impl Mempool {
     }
 }
 
+impl Default for Mempool {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub struct PersistentChain {
     pub db: Db,
 }
@@ -180,6 +186,12 @@ impl StateStore {
         *self.balances.entry(tx.to.clone()).or_insert(0) += tx.amount;
         self.nonces.insert(tx.from.clone(), tx.nonce + 1);
         true
+    }
+}
+
+impl Default for StateStore {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
