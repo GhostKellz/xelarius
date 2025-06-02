@@ -19,9 +19,17 @@ pub struct Block {
 }
 
 impl Block {
-    pub fn new(index: u64, timestamp: u64, transactions: Vec<Transaction>, previous_hash: String) -> Self {
+    pub fn new(
+        index: u64,
+        timestamp: u64,
+        transactions: Vec<Transaction>,
+        previous_hash: String,
+    ) -> Self {
         let mut hasher = Sha256::new();
-        hasher.update(format!("{}{}{:?}{}", index, timestamp, transactions, &previous_hash));
+        hasher.update(format!(
+            "{}{}{:?}{}",
+            index, timestamp, transactions, &previous_hash
+        ));
         let hash = format!("{:x}", hasher.finalize());
 
         Block {
@@ -34,14 +42,28 @@ impl Block {
     }
 
     pub fn is_valid(&self, prev_block: &Block) -> bool {
-        self.index == prev_block.index + 1 &&
-        self.previous_hash == prev_block.hash &&
-        self.hash == Block::calculate_hash(self.index, self.timestamp, &self.transactions, &self.previous_hash)
+        self.index == prev_block.index + 1
+            && self.previous_hash == prev_block.hash
+            && self.hash
+                == Block::calculate_hash(
+                    self.index,
+                    self.timestamp,
+                    &self.transactions,
+                    &self.previous_hash,
+                )
     }
 
-    pub fn calculate_hash(index: u64, timestamp: u64, transactions: &Vec<Transaction>, previous_hash: &str) -> String {
+    pub fn calculate_hash(
+        index: u64,
+        timestamp: u64,
+        transactions: &Vec<Transaction>,
+        previous_hash: &str,
+    ) -> String {
         let mut hasher = Sha256::new();
-        hasher.update(format!("{}{}{:?}{}", index, timestamp, transactions, previous_hash));
+        hasher.update(format!(
+            "{}{}{:?}{}",
+            index, timestamp, transactions, previous_hash
+        ));
         format!("{:x}", hasher.finalize())
     }
 }
@@ -92,7 +114,12 @@ mod tests {
     #[test]
     fn test_blockchain_add_block() {
         let mut chain = Blockchain::new();
-        let tx = Transaction { from: "a".into(), to: "b".into(), amount: 10, nonce: 1 };
+        let tx = Transaction {
+            from: "a".into(),
+            to: "b".into(),
+            amount: 10,
+            nonce: 1,
+        };
         let ok = chain.add_block(vec![tx.clone()], 123);
         assert!(ok);
         assert_eq!(chain.chain.len(), 2);
@@ -102,8 +129,18 @@ mod tests {
     #[test]
     fn test_chain_validation() {
         let mut chain = Blockchain::new();
-        let tx1 = Transaction { from: "a".into(), to: "b".into(), amount: 10, nonce: 1 };
-        let tx2 = Transaction { from: "b".into(), to: "c".into(), amount: 5, nonce: 2 };
+        let tx1 = Transaction {
+            from: "a".into(),
+            to: "b".into(),
+            amount: 10,
+            nonce: 1,
+        };
+        let tx2 = Transaction {
+            from: "b".into(),
+            to: "c".into(),
+            amount: 5,
+            nonce: 2,
+        };
         chain.add_block(vec![tx1], 1);
         chain.add_block(vec![tx2], 2);
         assert!(chain.is_valid_chain());
@@ -112,7 +149,12 @@ mod tests {
     #[test]
     fn test_invalid_block() {
         let mut chain = Blockchain::new();
-        let tx = Transaction { from: "a".into(), to: "b".into(), amount: 10, nonce: 1 };
+        let tx = Transaction {
+            from: "a".into(),
+            to: "b".into(),
+            amount: 10,
+            nonce: 1,
+        };
         let mut block = Block::new(1, 123, vec![tx], "bad_hash".into());
         block.hash = "tampered".into();
         chain.chain.push(block);

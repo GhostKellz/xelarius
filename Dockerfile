@@ -1,8 +1,8 @@
 # Dockerfile for xelarius-node
-FROM rust:1.76 as builder
+FROM rust:1.76.0 as builder
 WORKDIR /app
 COPY . .
-RUN cargo build --release -p xelarius-node
+RUN cargo build --release --locked -p xelarius-node
 
 FROM debian:buster-slim
 WORKDIR /app
