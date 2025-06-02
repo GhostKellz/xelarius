@@ -1,0 +1,8 @@
+[workspace]
+members = [
+    "xelarius-core",
+    "xelarius-node",
+    "xelarius-contracts"
+]
+
+resolver = "2"

@@ -1,0 +1,48 @@
+# === Rust ===
+/target
+**/*.rs.bk
+**/*.swp
+**/*.swo
+Cargo.lock
+Cargo.lock.old
+
+# === IntelliJ / VSCode ===
+.idea/
+.vscode/
+*.code-workspace
+
+# === Logs and misc ===
+*.log
+*.tmp
+*.bak
+
+# === Soroban CLI artifacts ===
+.soroban/
+.env
+.env.*
+
+# === Build Scripts and Output ===
+/scripts/*.sh~
+/scripts/*.log
+*.wasm
+*.wasm.old
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === Node (if used for frontend tools) ===
+node_modules/
+dist/
+build/
+.npm/
+
+# === Docs / Artifacts ===
+docs/book/
+/book/
+/*.pdf
+
+# === Coverage / Testing ===
+coverage/
+*.profraw
+*.profdata

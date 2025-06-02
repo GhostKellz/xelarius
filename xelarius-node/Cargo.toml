@@ -1,0 +1,7 @@
+[package]
+name = "xelarius-node"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+xelarius-core = { path = "../xelarius-core" }
