@@ -1,4 +1,4 @@
-use osirius_core::Blockchain;
+use xelarius_core::Blockchain;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 fn main() {
